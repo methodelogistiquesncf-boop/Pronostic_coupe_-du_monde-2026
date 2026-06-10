@@ -3,21 +3,254 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prono Cup - Connexion</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Prono Cup · Coupe du Monde</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #0e1a14;
+            color: #f0f0f0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Fond animé */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 40%, rgba(26,107,60,0.45) 0%, transparent 55%),
+                radial-gradient(ellipse at 80% 60%, rgba(26,58,107,0.45) 0%, transparent 55%),
+                radial-gradient(ellipse at 50% 90%, rgba(180,130,0,0.15) 0%, transparent 50%);
+            animation: bgPulse 8s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.018) 40px, rgba(255,255,255,0.018) 41px),
+                repeating-linear-gradient(0deg,  transparent, transparent 40px, rgba(255,255,255,0.018) 40px, rgba(255,255,255,0.018) 41px);
+            pointer-events: none;
+        }
+        @keyframes bgPulse {
+            from { opacity: 0.8; }
+            to   { opacity: 1; }
+        }
+
+        /* Carte centrale */
+        .card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 400px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 2.5rem 2rem 2rem;
+            backdrop-filter: blur(12px);
+        }
+
+        /* En-tête */
+        .card-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .trophy { font-size: 52px; display: block; margin-bottom: 0.75rem; }
+        .eyebrow {
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: rgba(255,215,0,0.6);
+            margin-bottom: 6px;
+        }
+        .card-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #FFD700;
+            letter-spacing: 1.5px;
+            text-shadow: 0 0 30px rgba(255,215,0,0.25);
+        }
+        .card-sub {
+            font-size: 13px;
+            color: rgba(255,255,255,0.4);
+            margin-top: 5px;
+        }
+
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: rgba(255,255,255,0.07);
+            margin-bottom: 1.75rem;
+        }
+
+        /* Mode label */
+        #auth-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.65);
+            margin-bottom: 1.25rem;
+            letter-spacing: 0.5px;
+        }
+
+        /* Champs */
+        .field {
+            margin-bottom: 12px;
+        }
+        .field label {
+            display: block;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 6px;
+        }
+        .field input {
+            width: 100%;
+            padding: 12px 14px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .field input::placeholder { color: rgba(255,255,255,0.25); }
+        .field input:focus {
+            border-color: rgba(255,215,0,0.5);
+            box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
+        }
+
+        /* Bouton principal */
+        #btn-primary {
+            width: 100%;
+            padding: 13px;
+            margin-top: 8px;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #1a2a00;
+            font-size: 15px;
+            font-weight: 700;
+            font-family: inherit;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+            box-shadow: 0 6px 24px rgba(255,165,0,0.3);
+        }
+        #btn-primary:hover {
+            opacity: 0.92;
+            box-shadow: 0 10px 32px rgba(255,165,0,0.45);
+            transform: translateY(-1px);
+        }
+        #btn-primary:active { transform: scale(0.98); }
+        #btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* Bouton secondaire */
+        #btn-toggle {
+            width: 100%;
+            padding: 11px;
+            margin-top: 8px;
+            background: transparent;
+            color: rgba(255,255,255,0.4);
+            font-size: 13px;
+            font-family: inherit;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+        }
+        #btn-toggle:hover {
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.7);
+            border-color: rgba(255,255,255,0.15);
+        }
+
+        /* Message d'erreur */
+        #error-msg {
+            display: none;
+            font-size: 13px;
+            color: #f87171;
+            background: rgba(220,38,38,0.12);
+            border: 1px solid rgba(220,38,38,0.25);
+            border-radius: 8px;
+            padding: 9px 12px;
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        /* Footer */
+        .card-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 11px;
+            color: rgba(255,255,255,0.2);
+        }
+
+        /* Transition champ pseudo */
+        #field-username {
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition: max-height 0.3s ease, opacity 0.3s ease, margin-bottom 0.3s ease;
+            margin-bottom: 0;
+        }
+        #field-username.visible {
+            max-height: 80px;
+            opacity: 1;
+            margin-bottom: 12px;
+        }
+
+        @media (max-width: 420px) {
+            .card { padding: 2rem 1.25rem 1.5rem; }
+            .card-title { font-size: 20px; }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <h1 id="auth-title">Connexion Équipe</h1>
-            
-            <input type="text" id="username" placeholder="Pseudo (uniquement pour l'inscription)" style="display: none;">
-            <input type="email" id="email" placeholder="Email">
-            <input type="password" id="password" placeholder="Mot de passe">
-            
-            <button id="btn-primary">Se connecter</button>
-            <button id="btn-toggle" style="background: transparent; color: var(--text-muted);">Pas de compte ? S'inscrire</button>
+
+    <div class="card">
+        <div class="card-header">
+            <span class="trophy">🏆</span>
+            <div class="eyebrow">Championnat de pronostics</div>
+            <div class="card-title">PRONO CUP</div>
+            <div class="card-sub">Coupe du Monde · Entre amis</div>
         </div>
+
+        <div class="divider"></div>
+
+        <div id="auth-title">Connexion équipe</div>
+
+        <div class="field" id="field-username">
+            <label for="username">Ton pseudo</label>
+            <input type="text" id="username" placeholder="Ex: LeRoiDuProno">
+        </div>
+
+        <div class="field">
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="ton@email.com" autocomplete="email">
+        </div>
+
+        <div class="field">
+            <label for="password">Mot de passe</label>
+            <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+
+        <button id="btn-primary">Se connecter</button>
+        <button id="btn-toggle">Pas de compte ? S'inscrire</button>
+
+        <div id="error-msg"></div>
+
+        <div class="card-footer">🔒 Connexion sécurisée · Firebase Auth</div>
     </div>
 
     <script type="module">
@@ -25,50 +258,86 @@
         import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        const emailInput = document.getElementById('email');
+        const emailInput    = document.getElementById('email');
         const passwordInput = document.getElementById('password');
         const usernameInput = document.getElementById('username');
-        const btnPrimary = document.getElementById('btn-primary');
-        const btnToggle = document.getElementById('btn-toggle');
-        const authTitle = document.getElementById('auth-title');
+        const fieldUsername = document.getElementById('field-username');
+        const btnPrimary    = document.getElementById('btn-primary');
+        const btnToggle     = document.getElementById('btn-toggle');
+        const authTitle     = document.getElementById('auth-title');
+        const errorMsg      = document.getElementById('error-msg');
 
         let isLoginMode = true;
 
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.style.display = 'block';
+        }
+        function hideError() {
+            errorMsg.style.display = 'none';
+        }
+
         btnToggle.addEventListener('click', () => {
             isLoginMode = !isLoginMode;
-            authTitle.innerText = isLoginMode ? "Connexion Équipe" : "Créer un compte";
-            btnPrimary.innerText = isLoginMode ? "Se connecter" : "S'inscrire";
-            usernameInput.style.display = isLoginMode ? "none" : "block";
-            btnToggle.innerText = isLoginMode ? "Pas de compte ? S'inscrire" : "Déjà un compte ? Se connecter";
+            hideError();
+            authTitle.textContent    = isLoginMode ? "Connexion équipe" : "Créer un compte";
+            btnPrimary.textContent   = isLoginMode ? "Se connecter" : "S'inscrire";
+            btnToggle.textContent    = isLoginMode ? "Pas de compte ? S'inscrire" : "Déjà un compte ? Se connecter";
+            fieldUsername.classList.toggle('visible', !isLoginMode);
+            document.querySelector('input[autocomplete="current-password"]').autocomplete
+                = isLoginMode ? 'current-password' : 'new-password';
         });
 
         btnPrimary.addEventListener('click', async () => {
-            const email = emailInput.value;
+            hideError();
+            const email    = emailInput.value.trim();
             const password = passwordInput.value;
-            const username = usernameInput.value;
+            const username = usernameInput.value.trim();
+
+            if (!email || !password) { showError("Remplis tous les champs."); return; }
+
+            btnPrimary.disabled    = true;
+            btnPrimary.textContent = "⏳ Chargement…";
 
             try {
                 if (isLoginMode) {
                     await signInWithEmailAndPassword(auth, email, password);
                 } else {
-                    if(!username) return alert("Indique un pseudo !");
-                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                    await updateProfile(userCredential.user, { displayName: username });
-                    
-                    await setDoc(doc(db, "users", userCredential.user.uid), {
+                    if (!username) { showError("Indique un pseudo !"); return; }
+                    const cred = await createUserWithEmailAndPassword(auth, email, password);
+                    await updateProfile(cred.user, { displayName: username });
+                    await setDoc(doc(db, "users", cred.user.uid), {
                         nom: username,
                         pointsTotaux: 0
                     });
                 }
                 window.location.href = "pronostics.html";
-            } catch (error) {
-                alert("Erreur: " + error.message);
+            } catch (err) {
+                const messages = {
+                    'auth/invalid-email':            "Adresse email invalide.",
+                    'auth/user-not-found':            "Aucun compte avec cet email.",
+                    'auth/wrong-password':            "Mot de passe incorrect.",
+                    'auth/email-already-in-use':      "Cet email est déjà utilisé.",
+                    'auth/weak-password':             "Mot de passe trop court (6 caractères min).",
+                    'auth/too-many-requests':         "Trop de tentatives. Réessaie plus tard.",
+                    'auth/invalid-credential':        "Email ou mot de passe incorrect.",
+                };
+                showError(messages[err.code] || "Erreur : " + err.message);
+            } finally {
+                btnPrimary.disabled    = false;
+                btnPrimary.textContent = isLoginMode ? "Se connecter" : "S'inscrire";
             }
+        });
+
+        // Soumission via Entrée
+        [emailInput, passwordInput, usernameInput].forEach(el => {
+            el.addEventListener('keydown', e => { if (e.key === 'Enter') btnPrimary.click(); });
         });
 
         auth.onAuthStateChanged(user => {
             if (user) window.location.href = "pronostics.html";
         });
     </script>
+
 </body>
 </html>
