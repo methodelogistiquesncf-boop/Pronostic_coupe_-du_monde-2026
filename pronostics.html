@@ -3,122 +3,542 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mes Pronostics</title>
+    <title>Mes Pronostics · Coupe du Monde</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* ── Reset & base ── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #0e1a14;
+            color: #f0f0f0;
+            min-height: 100vh;
+        }
+
+        /* ── Nav ── */
+        nav {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 10px 16px;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        nav a {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: rgba(255,255,255,0.65);
+            text-decoration: none;
+            transition: background 0.15s, color 0.15s;
+        }
+        nav a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        nav a.active { background: rgba(255,215,0,0.15); color: #FFD700; }
+        nav .spacer { flex: 1; }
+        nav #btn-logout {
+            margin-left: auto;
+            color: rgba(255,255,255,0.4);
+            font-size: 12px;
+        }
+        nav #nav-admin { color: #ff7043; }
+
+        /* ── Hero ── */
+        .hero {
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+            padding: 2.5rem 1rem 2rem;
+            background:
+                radial-gradient(ellipse at 30% 50%, rgba(26,107,60,0.5) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 50%, rgba(26,58,107,0.5) 0%, transparent 60%),
+                #0e1a14;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.02) 40px, rgba(255,255,255,0.02) 41px),
+                repeating-linear-gradient(0deg,  transparent, transparent 40px, rgba(255,255,255,0.02) 40px, rgba(255,255,255,0.02) 41px);
+            pointer-events: none;
+        }
+        .hero-trophy { font-size: 52px; display: block; margin-bottom: 0.5rem; }
+        .hero-eyebrow {
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: rgba(255,215,0,0.6);
+            margin-bottom: 6px;
+        }
+        .hero-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #FFD700;
+            letter-spacing: 2px;
+            text-shadow: 0 0 40px rgba(255,215,0,0.3);
+        }
+        .hero-sub {
+            font-size: 13px;
+            color: rgba(255,255,255,0.5);
+            margin-top: 6px;
+        }
+        .hero-pills {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 1.25rem;
+        }
+        .hero-pill {
+            font-size: 12px;
+            padding: 5px 13px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.7);
+            background: rgba(255,255,255,0.06);
+        }
+        .hero-pill.gold {
+            border-color: rgba(255,215,0,0.4);
+            color: #FFD700;
+            background: rgba(255,215,0,0.1);
+        }
+
+        /* ── Stats bar ── */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding: 1rem 16px;
+            background: rgba(0,0,0,0.2);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .stat-item {
+            text-align: center;
+            padding: 10px 8px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.07);
+        }
+        .stat-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #FFD700;
+            line-height: 1;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: rgba(255,255,255,0.4);
+            margin-top: 4px;
+        }
+
+        /* ── Container ── */
+        .container {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 1.25rem 16px 100px;
+        }
+
+        /* ── Group header ── */
+        .group-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 2rem 0 0.75rem;
+        }
+        .group-badge {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: #1a2a0a;
+            background: #FFD700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+        .group-line {
+            flex: 1;
+            height: 1px;
+            background: rgba(255,255,255,0.08);
+        }
+
+        /* ── Match card ── */
+        .match-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 10px;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .match-card:hover { border-color: rgba(255,215,0,0.2); background: rgba(255,255,255,0.07); }
+        .match-card.locked { opacity: 0.6; }
+
+        /* ── Match row ── */
+        .match-row {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 10px;
+        }
+        .team-block {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .team-block.right {
+            flex-direction: row-reverse;
+            text-align: right;
+        }
+        .flag {
+            width: 38px;
+            height: 28px;
+            border-radius: 5px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .team-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #f0f0f0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ── Score inputs ── */
+        .score-block {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .score-sep {
+            font-size: 20px;
+            font-weight: 300;
+            color: rgba(255,255,255,0.3);
+        }
+        .score-input {
+            width: 52px;
+            height: 52px;
+            text-align: center;
+            font-size: 22px;
+            font-weight: 700;
+            border: 2px solid rgba(255,255,255,0.12);
+            border-radius: 10px;
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            -moz-appearance: textfield;
+        }
+        .score-input:focus {
+            border-color: #FFD700;
+            box-shadow: 0 0 0 3px rgba(255,215,0,0.15);
+        }
+        .score-input:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        .score-input::-webkit-inner-spin-button,
+        .score-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+        /* ── Match meta ── */
+        .match-meta {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+        }
+        .badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 9px;
+            border-radius: 20px;
+        }
+        .badge-locked {
+            background: rgba(220,38,38,0.2);
+            color: #f87171;
+            border: 1px solid rgba(220,38,38,0.3);
+        }
+        .badge-open {
+            background: rgba(34,197,94,0.15);
+            color: #4ade80;
+            border: 1px solid rgba(34,197,94,0.25);
+        }
+
+        /* ── Save button ── */
+        #btn-save-all {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #1a2a00;
+            font-size: 15px;
+            font-weight: 700;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            box-shadow: 0 8px 32px rgba(255,165,0,0.35);
+            white-space: nowrap;
+            transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+        }
+        #btn-save-all:hover {
+            opacity: 0.93;
+            box-shadow: 0 12px 40px rgba(255,165,0,0.5);
+            transform: translateX(-50%) translateY(-1px);
+        }
+        #btn-save-all:active { transform: translateX(-50%) scale(0.97); }
+
+        /* ── Toast ── */
+        #toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(34,197,94,0.9);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: 30px;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            pointer-events: none;
+            z-index: 300;
+        }
+        #toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 420px) {
+            .team-name { font-size: 12px; }
+            .score-input { width: 44px; height: 44px; font-size: 18px; }
+            .hero-title { font-size: 22px; }
+        }
+    </style>
 </head>
 <body>
+
     <nav>
-        <a href="pronostics.html">⚽ Mes Pronos</a>
+        <a href="pronostics.html" class="active">⚽ Mes Pronos</a>
         <a href="classement.html">🏆 Classement</a>
-        <a href="admin.html" id="nav-admin" style="display: none; color: #ff4757;">🛠️ Admin</a>
+        <a href="admin.html" id="nav-admin" style="display:none;">🛠️ Admin</a>
+        <span class="spacer"></span>
         <a href="#" id="btn-logout">🚪 Déconnexion</a>
     </nav>
 
-    <div class="container">
-        <h2>Saisir mes Pronostics</h2>
-        <div id="matches-list">Chargement des matchs...</div>
-        <button id="btn-save-all" style="display:none; background-color: #2ec4b6;">💾 Tout Enregistrer</button>
+    <div class="hero">
+        <span class="hero-trophy">🏆</span>
+        <div class="hero-eyebrow">Pronostics officiels</div>
+        <div class="hero-title">COUPE DU MONDE</div>
+        <div class="hero-sub" id="hero-username">Chargement…</div>
+        <div class="hero-pills">
+            <span class="hero-pill gold">🥇 Classement en direct</span>
+            <span class="hero-pill">📅 Phase de groupes</span>
+            <span class="hero-pill">⚽ 48 matchs</span>
+        </div>
     </div>
+
+    <div class="stats-bar" id="stats-bar" style="display:none;">
+        <div class="stat-item">
+            <div class="stat-value" id="stat-saisis">–</div>
+            <div class="stat-label">Pronos saisis</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="stat-pts">–</div>
+            <div class="stat-label">Points gagnés</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="stat-exact">–</div>
+            <div class="stat-label">Score exact</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="matches-list"><p style="text-align:center; color:rgba(255,255,255,0.4); padding:3rem 0;">Chargement des matchs…</p></div>
+    </div>
+
+    <button id="btn-save-all" style="display:none;">💾 Tout Enregistrer</button>
+    <div id="toast">✅ Pronostics enregistrés !</div>
+
+    <!-- Mapping équipe → drapeau emoji. Compléter au besoin. -->
+    <script>
+        const FLAGS = {
+            "Qatar":"🇶🇦","Équateur":"🇪🇨","Sénégal":"🇸🇳","Pays-Bas":"🇳🇱",
+            "Angleterre":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","Iran":"🇮🇷","États-Unis":"🇺🇸","Pays de Galles":"🏴󠁧󠁢󠁷󠁬󠁳󠁿",
+            "Argentine":"🇦🇷","Arabie Saoudite":"🇸🇦","Mexique":"🇲🇽","Pologne":"🇵🇱",
+            "France":"🇫🇷","Australie":"🇦🇺","Danemark":"🇩🇰","Tunisie":"🇹🇳",
+            "Espagne":"🇪🇸","Costa Rica":"🇨🇷","Allemagne":"🇩🇪","Japon":"🇯🇵",
+            "Belgique":"🇧🇪","Canada":"🇨🇦","Maroc":"🇲🇦","Croatie":"🇭🇷",
+            "Brésil":"🇧🇷","Serbie":"🇷🇸","Suisse":"🇨🇭","Cameroun":"🇨🇲",
+            "Portugal":"🇵🇹","Ghana":"🇬🇭","Uruguay":"🇺🇾","Corée du Sud":"🇰🇷",
+        };
+        function getFlag(name) { return FLAGS[name] || "🏳️"; }
+    </script>
 
     <script type="module">
         import { auth, db } from './js/firebase-config.js';
-        import { collection, getDocs, doc, setDoc, getDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import {
+            collection, getDocs, doc, setDoc, getDoc, query, orderBy
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        const matchesList = document.getElementById('matches-list');
-        const btnSaveAll = document.getElementById('btn-save-all');
-        const navAdmin = document.getElementById('nav-admin');
+        const matchesList   = document.getElementById('matches-list');
+        const btnSaveAll    = document.getElementById('btn-save-all');
+        const navAdmin      = document.getElementById('nav-admin');
+        const heroUsername  = document.getElementById('hero-username');
+        const statsBar      = document.getElementById('stats-bar');
+        const toast         = document.getElementById('toast');
+
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
 
         auth.onAuthStateChanged(async (user) => {
-            if (!user) {
-                window.location.href = "index.html";
-                return;
-            }
+            if (!user) { window.location.href = "index.html"; return; }
+
+            heroUsername.textContent = `Bonjour ${user.displayName || user.email} 👋`;
 
             if (user.uid === "tYvyTn0PmhMbDpkjSwwEh2EjvYT2") {
-                navAdmin.style.display = "block";
+                navAdmin.style.display = "flex";
             }
 
-            // On récupère les matchs triés par groupe, puis par date
+            // ── Chargement des matchs ──
             const q = query(collection(db, "matches"), orderBy("groupe"), orderBy("dateLimite"));
             const matchesSnapshot = await getDocs(q);
             matchesList.innerHTML = "";
-            
-            if(matchesSnapshot.empty) {
-                matchesList.innerHTML = "<p style='text-align:center;'>Aucun match disponible pour le moment.</p>";
+
+            if (matchesSnapshot.empty) {
+                matchesList.innerHTML = "<p style='text-align:center; color:rgba(255,255,255,0.4); padding:3rem 0;'>Aucun match disponible pour le moment.</p>";
                 return;
             }
 
-            btnSaveAll.style.display = "block";
+            btnSaveAll.style.display = "flex";
+            statsBar.style.display   = "grid";
 
-            let dernierGroupeAffiche = "";
+            let dernierGroupe = "";
+            let nbSaisis = 0, totalPts = 0, nbExact = 0;
 
             for (const matchDoc of matchesSnapshot.docs) {
-                const match = matchDoc.data();
+                const match   = matchDoc.data();
                 const matchId = matchDoc.id;
                 const isBloque = new Date() > match.dateLimite.toDate();
 
-                // Si c'est un nouveau groupe, on ajoute un titre de séparation dans la liste
-                if (match.groupe !== dernierGroupeAffiche) {
-                    dernierGroupeAffiche = match.groupe;
-                    const groupHeader = document.createElement('h3');
-                    groupHeader.style.color = '#2ec4b6';
-                    groupHeader.style.marginTop = '30px';
-                    groupHeader.style.borderBottom = '2px solid #2ec4b6';
-                    groupHeader.style.paddingBottom = '5px';
-                    groupHeader.innerText = dernierGroupeAffiche;
-                    matchesList.appendChild(groupHeader);
+                // ── Séparateur de groupe ──
+                if (match.groupe !== dernierGroupe) {
+                    dernierGroupe = match.groupe;
+                    const gh = document.createElement('div');
+                    gh.className = 'group-header';
+                    gh.innerHTML = `<span class="group-badge">${dernierGroupe}</span><div class="group-line"></div>`;
+                    matchesList.appendChild(gh);
                 }
 
-                const pronoRef = doc(db, "predictions", `${user.uid}_${matchId}`);
+                // ── Récupération prono existant ──
+                const pronoRef  = doc(db, "predictions", `${user.uid}_${matchId}`);
                 const pronoSnap = await getDoc(pronoRef);
-                let pronoA = "";
-                let pronoB = "";
+                let pronoA = "", pronoB = "";
 
                 if (pronoSnap.exists()) {
-                    pronoA = pronoSnap.data().pronoA;
-                    pronoB = pronoSnap.data().pronoB;
+                    pronoA = pronoSnap.data().pronoA ?? "";
+                    pronoB = pronoSnap.data().pronoB ?? "";
+                    const pts = pronoSnap.data().pointsGagnes ?? 0;
+                    if (pronoA !== "") nbSaisis++;
+                    totalPts += pts;
+                    if (pts === 3) nbExact++;
                 }
 
-                const matchCard = document.createElement('div');
-                matchCard.className = "card";
-                matchCard.innerHTML = `
+                // ── Mise à jour stats ──
+                document.getElementById('stat-saisis').textContent = nbSaisis;
+                document.getElementById('stat-pts').textContent    = totalPts;
+                document.getElementById('stat-exact').textContent  = nbExact;
+
+                // ── Drapeaux ──
+                const flagA = getFlag(match.equipeA);
+                const flagB = getFlag(match.equipeB);
+
+                const limitStr = isBloque
+                    ? `<span class="badge badge-locked">❌ Verrouillé</span><span>Match démarré</span>`
+                    : `<span class="badge badge-open">⏳ Ouvert</span><span>Limite : ${match.dateLimite.toDate().toLocaleString('fr-FR')}</span>`;
+
+                // ── Carte du match ──
+                const card = document.createElement('div');
+                card.className = `match-card${isBloque ? ' locked' : ''}`;
+                card.innerHTML = `
                     <div class="match-row">
-                        <span class="team">${match.equipeA}</span>
-                        <div class="score-inputs">
-                            <input type="number" id="pronoA-${matchId}" value="${pronoA}" min="0" ${isBloque ? 'disabled' : ''}>
-                            <span>-</span>
-                            <input type="number" id="pronoB-${matchId}" value="${pronoB}" min="0" ${isBloque ? 'disabled' : ''}>
+                        <div class="team-block">
+                            <div class="flag">${flagA}</div>
+                            <span class="team-name">${match.equipeA}</span>
                         </div>
-                        <span class="team right">${match.equipeB}</span>
+                        <div class="score-block">
+                            <input class="score-input" type="number" id="pronoA-${matchId}"
+                                   min="0" value="${pronoA}" ${isBloque ? 'disabled' : ''} placeholder="?">
+                            <span class="score-sep">–</span>
+                            <input class="score-input" type="number" id="pronoB-${matchId}"
+                                   min="0" value="${pronoB}" ${isBloque ? 'disabled' : ''} placeholder="?">
+                        </div>
+                        <div class="team-block right">
+                            <div class="flag">${flagB}</div>
+                            <span class="team-name">${match.equipeB}</span>
+                        </div>
                     </div>
-                    <small style="color: var(--text-muted); display:block; text-align:center; margin-top:5px;">
-                        ${isBloque ? "❌ Verrouillé (Match démarré)" : `⏳ Limite : ${match.dateLimite.toDate().toLocaleString('fr-FR')}`}
-                    </small>
+                    <div class="match-meta">${limitStr}</div>
                 `;
-                matchesList.appendChild(matchCard);
+                matchesList.appendChild(card);
             }
 
+            // ── Sauvegarde ──
             btnSaveAll.onclick = async () => {
+                btnSaveAll.textContent = "⏳ Enregistrement…";
+                btnSaveAll.disabled = true;
+
                 for (const matchDoc of matchesSnapshot.docs) {
                     const matchId = matchDoc.id;
-                    const match = matchDoc.data();
+                    const match   = matchDoc.data();
                     if (new Date() > match.dateLimite.toDate()) continue;
 
-                    const valA = document.getElementById(`pronoA-${matchId}`).value;
-                    const valB = document.getElementById(`pronoB-${matchId}`).value;
+                    const valA = document.getElementById(`pronoA-${matchId}`)?.value;
+                    const valB = document.getElementById(`pronoB-${matchId}`)?.value;
 
                     if (valA !== "" && valB !== "") {
                         await setDoc(doc(db, "predictions", `${user.uid}_${matchId}`), {
-                            userId: user.uid,
-                            userName: user.displayName,
-                            matchId: matchId,
-                            pronoA: parseInt(valA),
-                            pronoB: parseInt(valB),
+                            userId:      user.uid,
+                            userName:    user.displayName,
+                            matchId:     matchId,
+                            pronoA:      parseInt(valA),
+                            pronoB:      parseInt(valB),
                             pointsGagnes: 0
                         }, { merge: true });
                     }
                 }
-                alert("Pronostics enregistrés ! ✅");
+
+                btnSaveAll.textContent = "💾 Tout Enregistrer";
+                btnSaveAll.disabled = false;
+                showToast("✅ Pronostics enregistrés !");
             };
         });
 
@@ -126,5 +546,6 @@
             auth.signOut().then(() => window.location.href = "index.html");
         });
     </script>
+
 </body>
 </html>
