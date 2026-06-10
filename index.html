@@ -8,11 +8,11 @@
 </head>
 <body>
     <div class="container">
-        <div class="card" id="auth-card">
+        <div class="card">
             <h1 id="auth-title">Connexion Équipe</h1>
             
             <input type="text" id="username" placeholder="Pseudo (uniquement pour l'inscription)" style="display: none;">
-            <input type="email" id="email" placeholder="Email professionnel ou perso">
+            <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Mot de passe">
             
             <button id="btn-primary">Se connecter</button>
@@ -55,7 +55,6 @@
                     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                     await updateProfile(userCredential.user, { displayName: username });
                     
-                    // Création du profil utilisateur dans Firestore pour le classement
                     await setDoc(doc(db, "users", userCredential.user.uid), {
                         nom: username,
                         pointsTotaux: 0
@@ -67,7 +66,6 @@
             }
         });
 
-        // Redirection si déjà connecté
         auth.onAuthStateChanged(user => {
             if (user) window.location.href = "pronostics.html";
         });
