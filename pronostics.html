@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mes Pronostics</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <a href="pronostics.html">⚽ Mes Pronos</a>
+        <a href="classement.html">🏆 Classement</a>
+        <a href="#" id="btn-logout">🚪 Déconnexion</a>
+    </nav>
+
+    <div class="container">
+        <h2>Saisir mes Pronostics</h2>
+        <div id="matches-list">Chargement des matchs...</div>
+        <button id="btn-save-all" style="display:none; background-color: #2ec4b6;">💾 Tout Enregistrer</button>
+    </div>
+
+    <script type="module">
+        import { auth, db } from './js/firebase-config.js';
+        import { collection, getDocs, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const matchesList = document.getElementById('matches-list');
+        const btnSaveAll = document.getElementById('btn-save-all');
+
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                window.location.href = "index.html";
+                return;
+            }
+
+            // Charger les matchs et les pronos existants
+            const matchesSnapshot = await getDocs(collection(db, "matches"));
+            matchesList.innerHTML = "";
+            
+            if(matchesSnapshot.empty) {
+                matchesList.innerHTML = "<p style='text-align:center;'>Aucun match disponible pour le moment.</p>";
+                return;
+            }
+
+            btnSaveAll.style.display = "block";
+
+            for (const matchDoc of matchesSnapshot.docs) {
+                const match = matchDoc.data();
+                const matchId = matchDoc.id;
+                const isBloque = new Date() > match.dateLimite.toDate();
+
+                // Chercher si le joueur a déjà mis un prono
+                const pronoRef = doc(db, "predictions", `${user.uid}_${matchId}`);
+                const pronoSnap = await getDoc(pronoRef);
+                let pronoA = "";
+                let pronoB = "";
+
+                if (pronoSnap.exists()) {
+                    pronoA = pronoSnap.data().pronoA;
+                    pronoB = pronoSnap.data().pronoB;
+                }
+
+                const matchCard = document.createElement('div');
+                matchCard.className = "card";
+                matchCard.innerHTML = `
+                    <div class="match-row">
+                        <span class="team">${match.equipeA}</span>
+                        <div class="score-inputs">
+                            <input type="number" id="pronoA-${matchId}" value="${pronoA}" min="0" ${isBloque ? 'disabled' : ''}>
+                            <span>-</span>
+                            <input type="number" id="pronoB-${matchId}" value="${pronoB}" min="0" ${isBloque ? 'disabled' : ''}>
+                        </div>
+                        <span class="team right">${match.equipeB}</span>
+                    </div>
+                    <small style="color: var(--text-muted); display:block; text-align:center; margin-top:5px;">
+                        ${isBloque ? "❌ Pronostic verrouillé (Match démarré)" : `⏳ Limite : ${match.dateLimite.toDate().toLocaleString('fr-FR')}`}
+                    </small>
+                `;
+                matchesList.appendChild(matchCard);
+            }
+
+            // Gestion de la sauvegarde globale
+            btnSaveAll.onclick = async () => {
+                for (const matchDoc of matchesSnapshot.docs) {
+                    const matchId = matchDoc.id;
+                    const match = matchDoc.data();
+                    if (new Date() > match.dateLimite.toDate()) continue; // Skip si verrouillé
+
+                    const valA = document.getElementById(`pronoA-${matchId}`).value;
+                    const valB = document.getElementById(`pronoB-${matchId}`).value;
+
+                    if (valA !== "" && valB !== "") {
+                        await setDoc(doc(db, "predictions", `${user.uid}_${matchId}`), {
+                            userId: user.uid,
+                            userName: user.displayName,
+                            matchId: matchId,
+                            pronoA: parseInt(valA),
+                            pronoB: parseInt(valB),
+                            pointsGagnes: 0
+                        }, { merge: true });
+                    }
+                }
+                alert("Tous vos pronostics ont été enregistrés ! ✅");
+            };
+        });
+
+        document.getElementById('btn-logout').addEventListener('click', () => {
+            auth.signOut().then(() => window.location.href = "index.html");
+        });
+    </script>
+</body>
+</html>
