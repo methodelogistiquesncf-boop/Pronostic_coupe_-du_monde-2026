@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prono Cup - Connexion</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="card" id="auth-card">
+            <h1 id="auth-title">Connexion Équipe</h1>
+            
+            <input type="text" id="username" placeholder="Pseudo (uniquement pour l'inscription)" style="display: none;">
+            <input type="email" id="email" placeholder="Email professionnel ou perso">
+            <input type="password" id="password" placeholder="Mot de passe">
+            
+            <button id="btn-primary">Se connecter</button>
+            <button id="btn-toggle" style="background: transparent; color: var(--text-muted);">Pas de compte ? S'inscrire</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from './js/firebase-config.js';
+        import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const usernameInput = document.getElementById('username');
+        const btnPrimary = document.getElementById('btn-primary');
+        const btnToggle = document.getElementById('btn-toggle');
+        const authTitle = document.getElementById('auth-title');
+
+        let isLoginMode = true;
+
+        btnToggle.addEventListener('click', () => {
+            isLoginMode = !isLoginMode;
+            authTitle.innerText = isLoginMode ? "Connexion Équipe" : "Créer un compte";
+            btnPrimary.innerText = isLoginMode ? "Se connecter" : "S'inscrire";
+            usernameInput.style.display = isLoginMode ? "none" : "block";
+            btnToggle.innerText = isLoginMode ? "Pas de compte ? S'inscrire" : "Déjà un compte ? Se connecter";
+        });
+
+        btnPrimary.addEventListener('click', async () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            const username = usernameInput.value;
+
+            try {
+                if (isLoginMode) {
+                    await signInWithEmailAndPassword(auth, email, password);
+                } else {
+                    if(!username) return alert("Indique un pseudo !");
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    await updateProfile(userCredential.user, { displayName: username });
+                    
+                    // Création du profil utilisateur dans Firestore pour le classement
+                    await setDoc(doc(db, "users", userCredential.user.uid), {
+                        nom: username,
+                        pointsTotaux: 0
+                    });
+                }
+                window.location.href = "pronostics.html";
+            } catch (error) {
+                alert("Erreur: " + error.message);
+            }
+        });
+
+        // Redirection si déjà connecté
+        auth.onAuthStateChanged(user => {
+            if (user) window.location.href = "pronostics.html";
+        });
+    </script>
+</body>
+</html>
