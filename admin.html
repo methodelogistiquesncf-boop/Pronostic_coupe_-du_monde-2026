@@ -14,11 +14,19 @@
     </nav>
 
     <div class="container">
+        <div class="card" style="border: 2px dashed #2ec4b6;">
+            <h2>Configuration Automatique</h2>
+            <p style="font-size: 0.9em; color: var(--text-muted); text-align: center;">
+                Clique sur ce bouton pour charger automatiquement les vrais premiers matchs de la compétition dans ta base Firebase.
+            </p>
+            <button id="btn-injecter-tout" style="background-color: #2ec4b6;">🚀 Injecter le Calendrier Officiel</button>
+        </div>
+
         <div class="card">
-            <h2>Créer un Match</h2>
-            <input type="text" id="add-groupe" placeholder="Groupe (ex: Groupe A, Groupe I, Huitièmes...)">
-            <input type="text" id="add-teamA" placeholder="Équipe A (ex: Canada)">
-            <input type="text" id="add-teamB" placeholder="Équipe B (ex: Bosnie-Herzégovine)">
+            <h2>Créer un Match Manuel</h2>
+            <input type="text" id="add-groupe" placeholder="Groupe (ex: Groupe A, Groupe I...)">
+            <input type="text" id="add-teamA" placeholder="Équipe A">
+            <input type="text" id="add-teamB" placeholder="Équipe B">
             <input type="datetime-local" id="add-date">
             <button id="btn-create-match">Ajouter le match</button>
         </div>
@@ -46,13 +54,69 @@
             }
         });
 
+        // ==========================================
+        // LE SCRIPT D'INJECTION DU CALENDRIER REEL
+        // ==========================================
+        document.getElementById('btn-injecter-tout').addEventListener('click', async () => {
+            if(!confirm("Veux-tu vraiment injecter les matchs officiels dans ta base de données ?")) return;
+
+            // Liste des matchs officiels de la phase de poules
+            const calendrierOfficiel = [
+                // GROUPE A
+                { groupe: "Groupe A", equipeA: "Mexique", equipeB: "Afrique du Sud", date: "2026-06-11T19:00:00", statut: "futur", scoreA: null, scoreB: null },
+                { groupe: "Groupe A", equipeA: "Corée du Sud", equipeB: "République tchèque", date: "2026-06-12T14:00:00", statut: "futur", scoreA: null, scoreB: null },
+                { groupe: "Groupe A", equipeA: "Mexique", equipeB: "Corée du Sud", date: "2026-06-17T17:00:00", statut: "futur", scoreA: null, scoreB: null },
+                { groupe: "Groupe A", equipeA: "République tchèque", equipeB: "Afrique du Sud", date: "2026-06-17T20:00:00", statut: "futur", scoreA: null, scoreB: null },
+                
+                // GROUPE B
+                { groupe: "Groupe B", equipeA: "Canada", equipeB: "Bosnie-Herzégovine", date: "2026-06-12T17:00:00", statut: "futur", scoreA: null, scoreB: null },
+                { groupe: "Groupe B", equipeA: "Qatar", equipeB: "Suisse", date: "2026-06-12T20:00:00", statut: "futur", scoreA: null, scoreB: null },
+                
+                // GROUPE C
+                { groupe: "Groupe C", equipeA: "Brésil", equipeB: "Maroc", date: "2026-06-13T14:00:00", statut: "futur", scoreA: null, scoreB: null },
+                { groupe: "Groupe C", equipeA: "Haïti", equipeB: "Écosse", date: "2026-06-13T17:00:00", statut: "futur", scoreA: null, scoreB: null },
+                
+                // GROUPE D
+                { groupe: "Groupe D", equipeA: "États-Unis", equipeB: "Paraguay", date: "2026-06-13T20:00:00", statut: "futur", scoreA: null, scoreB: null },
+                { groupe: "Groupe D", equipeA: "Australie", equipeB: "Turquie", date: "2026-06-14T14:00:00", statut: "futur", scoreA: null, scoreB: null },
+                
+                // GROUPE I (Groupe de la France 🇫🇷)
+                { groupe: "Groupe I", equipeA: "France", equipeB: "Sénégal", date: "2026-06-15T18:00:00", statut: "futur", scoreA: null, scoreB: null },
+                { groupe: "Groupe I", equipeA: "Irak", equipeB: "Norvège", date: "2026-06-15T21:00:00", statut: "futur", scoreA: null, scoreB: null },
+                { groupe: "Groupe I", equipeA: "France", equipeB: "Irak", date: "2026-06-20T15:00:00", statut: "futur", scoreA: null, scoreB: null },
+                { groupe: "Groupe I", equipeA: "Norvège", equipeB: "Sénégal", date: "2026-06-20T18:00:00", statut: "futur", scoreA: null, scoreB: null }
+            ];
+
+            try {
+                let compteur = 0;
+                for (const match of calendrierOfficiel) {
+                    await addDoc(collection(db, "matches"), {
+                        groupe: match.groupe,
+                        equipeA: match.equipeA,
+                        equipeB: match.equipeB,
+                        scoreA: match.scoreA,
+                        scoreB: match.scoreB,
+                        statut: match.statut,
+                        // Conversion de la date texte en Timestamp Firebase
+                        dateLimite: Timestamp.fromDate(new Date(match.date))
+                    });
+                    compteur++;
+                }
+                alert(`${compteur} matchs officiels ont été injectés avec succès ! 🚀`);
+                location.reload();
+            } catch (error) {
+                alert("Erreur lors de l'injection : " + error.message);
+            }
+        });
+
+        // Ajouter un match manuellement
         document.getElementById('btn-create-match').addEventListener('click', async () => {
             const groupe = document.getElementById('add-groupe').value.trim();
             const eqA = document.getElementById('add-teamA').value.trim();
             const eqB = document.getElementById('add-teamB').value.trim();
             const dateVal = document.getElementById('add-date').value;
 
-            if(!groupe || !eqA || !eqB || !dateVal) return alert("Remplis tous les champs, y compris le groupe !");
+            if(!groupe || !eqA || !eqB || !dateVal) return alert("Remplis tous les champs !");
 
             await addDoc(collection(db, "matches"), {
                 groupe: groupe,
@@ -63,19 +127,18 @@
                 dateLimite: Timestamp.fromDate(new Date(dateVal)),
                 statut: "futur"
             });
-            alert("Match ajouté ! ✅");
+            alert("Match ajouté manuellement ! ✅");
             location.reload();
         });
 
         async function loadAdminMatches() {
-            // On trie les matchs par groupe pour que ce soit plus clair aussi côté admin
             const q = query(collection(db, "matches"), orderBy("groupe"), orderBy("dateLimite"));
             const snap = await getDocs(q);
             const container = document.getElementById('admin-matches-list');
             container.innerHTML = "";
 
             if(snap.empty) {
-                container.innerHTML = "<p>Aucun match créé.</p>";
+                container.innerHTML = "<p>Aucun match en base de données.</p>";
                 return;
             }
 
