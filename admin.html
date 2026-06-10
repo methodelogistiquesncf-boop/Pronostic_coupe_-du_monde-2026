@@ -16,6 +16,7 @@
     <div class="container">
         <div class="card">
             <h2>Créer un Match</h2>
+            <input type="text" id="add-groupe" placeholder="Groupe (ex: Groupe A, Groupe I, Huitièmes...)">
             <input type="text" id="add-teamA" placeholder="Équipe A (ex: Canada)">
             <input type="text" id="add-teamB" placeholder="Équipe B (ex: Bosnie-Herzégovine)">
             <input type="datetime-local" id="add-date">
@@ -30,7 +31,7 @@
 
     <script type="module">
         import { auth, db } from './js/firebase-config.js';
-        import { collection, addDoc, getDocs, doc, updateDoc, getDoc, Timestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { collection, addDoc, getDocs, doc, updateDoc, getDoc, Timestamp, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
         const UID_ADMIN_UNIQUE = "tYvyTn0PmhMbDpkjSwwEh2EjvYT2"; 
 
@@ -46,13 +47,15 @@
         });
 
         document.getElementById('btn-create-match').addEventListener('click', async () => {
-            const eqA = document.getElementById('add-teamA').value;
-            const eqB = document.getElementById('add-teamB').value;
+            const groupe = document.getElementById('add-groupe').value.trim();
+            const eqA = document.getElementById('add-teamA').value.trim();
+            const eqB = document.getElementById('add-teamB').value.trim();
             const dateVal = document.getElementById('add-date').value;
 
-            if(!eqA || !eqB || !dateVal) return alert("Remplis tous les champs !");
+            if(!groupe || !eqA || !eqB || !dateVal) return alert("Remplis tous les champs, y compris le groupe !");
 
             await addDoc(collection(db, "matches"), {
+                groupe: groupe,
                 equipeA: eqA,
                 equipeB: eqB,
                 scoreA: null,
@@ -65,7 +68,9 @@
         });
 
         async function loadAdminMatches() {
-            const snap = await getDocs(collection(db, "matches"));
+            // On trie les matchs par groupe pour que ce soit plus clair aussi côté admin
+            const q = query(collection(db, "matches"), orderBy("groupe"), orderBy("dateLimite"));
+            const snap = await getDocs(q);
             const container = document.getElementById('admin-matches-list');
             container.innerHTML = "";
 
@@ -82,7 +87,8 @@
                 div.className = "card";
                 div.style.background = "#0f3460";
                 div.innerHTML = `
-                    <p style="text-align:center; font-weight:bold;">${match.equipeA} VS ${match.equipeB}</p>
+                    <small style="color: var(--primary); font-weight: bold; display: block; text-align: center;">${match.groupe || 'Sans Groupe'}</small>
+                    <p style="text-align:center; font-weight:bold; margin-top: 5px;">${match.equipeA} VS ${match.equipeB}</p>
                     <div style="display:flex; gap:10px; justify-content:center;">
                         <input type="number" id="finalA-${mId}" placeholder="Score A" value="${match.scoreA !== null ? match.scoreA : ''}" style="width:70px;">
                         <input type="number" id="finalB-${mId}" placeholder="Score B" value="${match.scoreB !== null ? match.scoreB : ''}" style="width:70px;">
