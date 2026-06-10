@@ -2,212 +2,551 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Admin - Gestion Coupe du monde</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin · Prono Cup</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #0e1a14;
+            color: #f0f0f0;
+            min-height: 100vh;
+        }
+
+        /* ── Fond ── */
+        .bg-layer {
+            position: fixed; inset: 0;
+            background:
+                radial-gradient(ellipse at 15% 30%, rgba(26,107,60,0.35) 0%, transparent 55%),
+                radial-gradient(ellipse at 85% 70%, rgba(180,50,50,0.25) 0%, transparent 55%);
+            pointer-events: none; z-index: 0;
+        }
+        .bg-grid {
+            position: fixed; inset: 0;
+            background-image:
+                repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.018) 40px, rgba(255,255,255,0.018) 41px),
+                repeating-linear-gradient(0deg,  transparent, transparent 40px, rgba(255,255,255,0.018) 40px, rgba(255,255,255,0.018) 41px);
+            pointer-events: none; z-index: 0;
+        }
+
+        /* ── Nav ── */
+        nav {
+            position: sticky; top: 0; z-index: 100;
+            display: flex; align-items: center; gap: 4px;
+            padding: 10px 16px;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        nav a {
+            display: flex; align-items: center; gap: 6px;
+            padding: 7px 14px; border-radius: 8px;
+            font-size: 13px; color: rgba(255,255,255,0.65);
+            text-decoration: none;
+            transition: background 0.15s, color 0.15s;
+        }
+        nav a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        nav a.active { background: rgba(255,100,70,0.15); color: #ff7043; }
+        nav .spacer { flex: 1; }
+        nav #btn-logout { margin-left: auto; color: rgba(255,255,255,0.4); font-size: 12px; }
+
+        /* ── Hero ── */
+        .hero {
+            position: relative; z-index: 1;
+            text-align: center;
+            padding: 2rem 1rem 1.5rem;
+        }
+        .hero-icon { font-size: 44px; display: block; margin-bottom: 0.5rem; }
+        .hero-eyebrow {
+            font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+            color: rgba(255,100,70,0.7); margin-bottom: 6px;
+        }
+        .hero-title {
+            font-size: 24px; font-weight: 700;
+            color: #ff7043; letter-spacing: 1.5px;
+            text-shadow: 0 0 30px rgba(255,100,70,0.3);
+        }
+        .hero-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin-top: 5px; }
+
+        /* ── Container ── */
+        .container {
+            position: relative; z-index: 1;
+            max-width: 680px; margin: 0 auto;
+            padding: 0 16px 80px;
+        }
+
+        /* ── Section header ── */
+        .section-header {
+            display: flex; align-items: center; gap: 10px;
+            margin: 1.75rem 0 0.75rem;
+        }
+        .section-badge {
+            font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+            padding: 4px 12px; border-radius: 20px; white-space: nowrap;
+        }
+        .section-badge.orange { color: #1a0a00; background: #ff7043; }
+        .section-badge.teal   { color: #001a14; background: #2ec4b6; }
+        .section-badge.red    { color: #1a0000; background: #ff4757; }
+        .section-line { flex: 1; height: 1px; background: rgba(255,255,255,0.08); }
+
+        /* ── Card générique ── */
+        .card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 1.25rem;
+            margin-bottom: 12px;
+            transition: border-color 0.2s;
+        }
+        .card:hover { border-color: rgba(255,255,255,0.13); }
+        .card.inject-card {
+            border: 1px dashed rgba(46,196,182,0.4);
+            background: rgba(46,196,182,0.04);
+            text-align: center;
+        }
+
+        .card-title {
+            font-size: 14px; font-weight: 700;
+            color: rgba(255,255,255,0.85);
+            margin-bottom: 4px;
+        }
+        .card-desc {
+            font-size: 13px; color: rgba(255,255,255,0.4);
+            margin-bottom: 1rem; line-height: 1.5;
+        }
+
+        /* ── Champs ── */
+        .field { margin-bottom: 10px; }
+        .field label {
+            display: block; font-size: 11px; letter-spacing: 1px;
+            text-transform: uppercase; color: rgba(255,255,255,0.35);
+            margin-bottom: 5px;
+        }
+        .field input, .field select {
+            width: 100%; padding: 11px 13px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 9px; color: #fff;
+            font-size: 14px; font-family: inherit;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .field input::placeholder { color: rgba(255,255,255,0.2); }
+        .field input:focus, .field select:focus {
+            border-color: rgba(255,112,67,0.5);
+            box-shadow: 0 0 0 3px rgba(255,112,67,0.1);
+        }
+        .field select option { background: #1a2a1a; }
+
+        .fields-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        /* ── Boutons ── */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            gap: 7px; padding: 11px 18px;
+            font-size: 14px; font-weight: 700; font-family: inherit;
+            border: none; border-radius: 10px; cursor: pointer;
+            transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+            width: 100%;
+        }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+        .btn-inject {
+            background: linear-gradient(135deg, #2ec4b6, #1a9e92);
+            color: #001a14;
+            box-shadow: 0 6px 20px rgba(46,196,182,0.3);
+        }
+        .btn-create {
+            background: linear-gradient(135deg, #ff7043, #e64a19);
+            color: #fff;
+            box-shadow: 0 6px 20px rgba(255,112,67,0.3);
+        }
+        .btn-validate {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #1a2a00;
+            box-shadow: 0 4px 14px rgba(255,165,0,0.25);
+            font-size: 13px; padding: 9px 14px;
+        }
+        .btn-recalc {
+            background: rgba(255,255,255,0.07);
+            color: rgba(255,255,255,0.6);
+            border: 1px solid rgba(255,255,255,0.12);
+            font-size: 13px; padding: 9px 14px;
+        }
+
+        /* ── Match admin card ── */
+        .match-admin-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 10px;
+            transition: border-color 0.2s;
+        }
+        .match-admin-card:hover { border-color: rgba(255,215,0,0.2); }
+        .match-admin-card.termine {
+            border-color: rgba(46,196,182,0.25);
+            background: rgba(46,196,182,0.03);
+        }
+
+        .match-admin-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .match-groupe-badge {
+            font-size: 10px; font-weight: 700; letter-spacing: 1px;
+            background: rgba(255,215,0,0.15); color: #FFD700;
+            border: 1px solid rgba(255,215,0,0.25);
+            padding: 3px 9px; border-radius: 20px;
+        }
+        .match-statut-badge {
+            font-size: 10px; font-weight: 700;
+            padding: 3px 9px; border-radius: 20px;
+        }
+        .match-statut-badge.futur {
+            background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.4);
+        }
+        .match-statut-badge.termine {
+            background: rgba(46,196,182,0.15); color: #2ec4b6;
+            border: 1px solid rgba(46,196,182,0.3);
+        }
+
+        .match-teams {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 12px;
+        }
+        .match-team { font-size: 14px; font-weight: 600; color: #f0f0f0; flex: 1; }
+        .match-team.right { text-align: right; }
+        .match-vs { font-size: 11px; color: rgba(255,255,255,0.3); }
+
+        .score-row {
+            display: flex; align-items: center; gap: 8px;
+            margin-bottom: 10px;
+        }
+        .score-row label { font-size: 12px; color: rgba(255,255,255,0.4); white-space: nowrap; }
+        .score-input-sm {
+            width: 60px; height: 40px; text-align: center;
+            font-size: 18px; font-weight: 700;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px; color: #fff;
+            outline: none;
+            transition: border-color 0.15s;
+            -moz-appearance: textfield;
+        }
+        .score-input-sm:focus { border-color: rgba(255,215,0,0.5); }
+        .score-input-sm::-webkit-inner-spin-button,
+        .score-input-sm::-webkit-outer-spin-button { -webkit-appearance: none; }
+        .score-sep { font-size: 18px; color: rgba(255,255,255,0.25); }
+
+        /* Squelettes */
+        .skeleton {
+            background: rgba(255,255,255,0.06);
+            border-radius: 12px; height: 120px;
+            margin-bottom: 10px;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0%   { opacity: 0.6; }
+            50%  { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        /* Toast */
+        #toast {
+            position: fixed; bottom: 24px; left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            font-size: 14px; font-weight: 600;
+            padding: 10px 20px; border-radius: 30px;
+            opacity: 0; transition: opacity 0.3s, transform 0.3s;
+            pointer-events: none; z-index: 300;
+            white-space: nowrap;
+        }
+        #toast.success { background: rgba(46,196,182,0.9); color: #001a14; }
+        #toast.error   { background: rgba(220,38,38,0.9);  color: #fff; }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        @media (max-width: 420px) {
+            .fields-row { grid-template-columns: 1fr; }
+            .hero-title { font-size: 20px; }
+        }
+    </style>
 </head>
 <body>
+
+    <div class="bg-layer"></div>
+    <div class="bg-grid"></div>
+
     <nav>
         <a href="pronostics.html">⚽ Mes Pronos</a>
         <a href="classement.html">🏆 Classement</a>
-        <a href="admin.html" style="color: #ff4757;">🛠️ Admin</a>
+        <a href="admin.html" class="active">🛠️ Admin</a>
+        <span class="spacer"></span>
         <a href="#" id="btn-logout">🚪 Déconnexion</a>
     </nav>
 
-    <div class="container">
-        <div class="card" style="border: 2px dashed #2ec4b6;">
-            <h2>Configuration Automatique</h2>
-            <p style="font-size: 0.9em; color: var(--text-muted); text-align: center;">
-                Clique sur ce bouton pour charger automatiquement les vrais premiers matchs de la compétition dans ta base Firebase.
-            </p>
-            <button id="btn-injecter-tout" style="background-color: #2ec4b6;">🚀 Injecter le Calendrier Officiel</button>
-        </div>
-
-        <div class="card">
-            <h2>Créer un Match Manuel</h2>
-            <input type="text" id="add-groupe" placeholder="Groupe (ex: Groupe A, Groupe I...)">
-            <input type="text" id="add-teamA" placeholder="Équipe A">
-            <input type="text" id="add-teamB" placeholder="Équipe B">
-            <input type="datetime-local" id="add-date">
-            <button id="btn-create-match">Ajouter le match</button>
-        </div>
-
-        <div class="card">
-            <h2>Clôturer et Calculer les points</h2>
-            <div id="admin-matches-list">Chargement...</div>
-        </div>
+    <div class="hero">
+        <span class="hero-icon">🛠️</span>
+        <div class="hero-eyebrow">Accès restreint</div>
+        <div class="hero-title">PANNEAU ADMIN</div>
+        <div class="hero-sub">Gestion Coupe du Monde · Prono Cup</div>
     </div>
+
+    <div class="container">
+
+        <!-- Injection calendrier -->
+        <div class="section-header">
+            <span class="section-badge teal">CALENDRIER OFFICIEL</span>
+            <div class="section-line"></div>
+        </div>
+
+        <div class="card inject-card">
+            <div class="card-title">⚡ Configuration automatique</div>
+            <div class="card-desc">
+                Injecte directement les matchs officiels de la phase de groupes dans ta base Firebase.
+                Cette action est irréversible.
+            </div>
+            <button class="btn btn-inject" id="btn-injecter-tout">🚀 Injecter le Calendrier Officiel</button>
+        </div>
+
+        <!-- Création manuelle -->
+        <div class="section-header">
+            <span class="section-badge orange">MATCH MANUEL</span>
+            <div class="section-line"></div>
+        </div>
+
+        <div class="card">
+            <div class="field">
+                <label>Groupe</label>
+                <input type="text" id="add-groupe" placeholder="Ex : Groupe A, Groupe I…">
+            </div>
+            <div class="fields-row">
+                <div class="field">
+                    <label>Équipe A</label>
+                    <input type="text" id="add-teamA" placeholder="France">
+                </div>
+                <div class="field">
+                    <label>Équipe B</label>
+                    <input type="text" id="add-teamB" placeholder="Sénégal">
+                </div>
+            </div>
+            <div class="field">
+                <label>Date limite de saisie</label>
+                <input type="datetime-local" id="add-date">
+            </div>
+            <button class="btn btn-create" id="btn-create-match">➕ Ajouter le match</button>
+        </div>
+
+        <!-- Clôture & points -->
+        <div class="section-header">
+            <span class="section-badge red">RÉSULTATS & POINTS</span>
+            <div class="section-line"></div>
+        </div>
+
+        <div id="skeletons">
+            <div class="skeleton"></div>
+            <div class="skeleton"></div>
+            <div class="skeleton"></div>
+        </div>
+
+        <div id="admin-matches-list"></div>
+
+    </div>
+
+    <div id="toast"></div>
 
     <script type="module">
         import { auth, db } from './js/firebase-config.js';
-        import { collection, addDoc, getDocs, doc, updateDoc, getDoc, Timestamp, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import {
+            collection, addDoc, getDocs, doc, updateDoc, getDoc,
+            Timestamp, query, where, orderBy
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        const UID_ADMIN_UNIQUE = "tYvyTn0PmhMbDpkjSwwEh2EjvYT2"; 
+        const UID_ADMIN = "tYvyTn0PmhMbDpkjSwwEh2EjvYT2";
+        const toast = document.getElementById('toast');
+
+        function showToast(msg, type = 'success') {
+            toast.textContent = msg;
+            toast.className = `${type} show`;
+            setTimeout(() => toast.classList.remove('show'), 3500);
+        }
 
         auth.onAuthStateChanged((user) => {
-            if (!user) {
-                window.location.href = "index.html";
-            } else if (user.uid !== UID_ADMIN_UNIQUE) {
-                alert("Accès refusé ! Tu n'es pas l'administrateur.");
-                window.location.href = "pronostics.html";
-            } else {
-                loadAdminMatches();
+            if (!user) { window.location.href = "index.html"; return; }
+            if (user.uid !== UID_ADMIN) {
+                showToast("Accès refusé !", "error");
+                setTimeout(() => window.location.href = "pronostics.html", 1500);
+                return;
             }
+            loadAdminMatches();
         });
 
-        // ==========================================
-        // LE SCRIPT D'INJECTION DU CALENDRIER REEL
-        // ==========================================
+        // ── Injection calendrier officiel ──
         document.getElementById('btn-injecter-tout').addEventListener('click', async () => {
-            if(!confirm("Veux-tu vraiment injecter les matchs officiels dans ta base de données ?")) return;
+            if (!confirm("Injecter les matchs officiels dans Firebase ?")) return;
 
-            // Liste des matchs officiels de la phase de poules
             const calendrierOfficiel = [
-                // GROUPE A
-                { groupe: "Groupe A", equipeA: "Mexique", equipeB: "Afrique du Sud", date: "2026-06-11T19:00:00", statut: "futur", scoreA: null, scoreB: null },
-                { groupe: "Groupe A", equipeA: "Corée du Sud", equipeB: "République tchèque", date: "2026-06-12T14:00:00", statut: "futur", scoreA: null, scoreB: null },
-                { groupe: "Groupe A", equipeA: "Mexique", equipeB: "Corée du Sud", date: "2026-06-17T17:00:00", statut: "futur", scoreA: null, scoreB: null },
-                { groupe: "Groupe A", equipeA: "République tchèque", equipeB: "Afrique du Sud", date: "2026-06-17T20:00:00", statut: "futur", scoreA: null, scoreB: null },
-                
-                // GROUPE B
-                { groupe: "Groupe B", equipeA: "Canada", equipeB: "Bosnie-Herzégovine", date: "2026-06-12T17:00:00", statut: "futur", scoreA: null, scoreB: null },
-                { groupe: "Groupe B", equipeA: "Qatar", equipeB: "Suisse", date: "2026-06-12T20:00:00", statut: "futur", scoreA: null, scoreB: null },
-                
-                // GROUPE C
-                { groupe: "Groupe C", equipeA: "Brésil", equipeB: "Maroc", date: "2026-06-13T14:00:00", statut: "futur", scoreA: null, scoreB: null },
-                { groupe: "Groupe C", equipeA: "Haïti", equipeB: "Écosse", date: "2026-06-13T17:00:00", statut: "futur", scoreA: null, scoreB: null },
-                
-                // GROUPE D
-                { groupe: "Groupe D", equipeA: "États-Unis", equipeB: "Paraguay", date: "2026-06-13T20:00:00", statut: "futur", scoreA: null, scoreB: null },
-                { groupe: "Groupe D", equipeA: "Australie", equipeB: "Turquie", date: "2026-06-14T14:00:00", statut: "futur", scoreA: null, scoreB: null },
-                
-                // GROUPE I (Groupe de la France 🇫🇷)
-                { groupe: "Groupe I", equipeA: "France", equipeB: "Sénégal", date: "2026-06-15T18:00:00", statut: "futur", scoreA: null, scoreB: null },
-                { groupe: "Groupe I", equipeA: "Irak", equipeB: "Norvège", date: "2026-06-15T21:00:00", statut: "futur", scoreA: null, scoreB: null },
-                { groupe: "Groupe I", equipeA: "France", equipeB: "Irak", date: "2026-06-20T15:00:00", statut: "futur", scoreA: null, scoreB: null },
-                { groupe: "Groupe I", equipeA: "Norvège", equipeB: "Sénégal", date: "2026-06-20T18:00:00", statut: "futur", scoreA: null, scoreB: null }
+                { groupe: "Groupe A", equipeA: "Mexique",           equipeB: "Afrique du Sud",      date: "2026-06-11T19:00:00" },
+                { groupe: "Groupe A", equipeA: "Corée du Sud",      equipeB: "République tchèque",  date: "2026-06-12T14:00:00" },
+                { groupe: "Groupe A", equipeA: "Mexique",           equipeB: "Corée du Sud",         date: "2026-06-17T17:00:00" },
+                { groupe: "Groupe A", equipeA: "République tchèque",equipeB: "Afrique du Sud",      date: "2026-06-17T20:00:00" },
+                { groupe: "Groupe B", equipeA: "Canada",            equipeB: "Bosnie-Herzégovine",  date: "2026-06-12T17:00:00" },
+                { groupe: "Groupe B", equipeA: "Qatar",             equipeB: "Suisse",              date: "2026-06-12T20:00:00" },
+                { groupe: "Groupe C", equipeA: "Brésil",            equipeB: "Maroc",               date: "2026-06-13T14:00:00" },
+                { groupe: "Groupe C", equipeA: "Haïti",             equipeB: "Écosse",              date: "2026-06-13T17:00:00" },
+                { groupe: "Groupe D", equipeA: "États-Unis",        equipeB: "Paraguay",            date: "2026-06-13T20:00:00" },
+                { groupe: "Groupe D", equipeA: "Australie",         equipeB: "Turquie",             date: "2026-06-14T14:00:00" },
+                { groupe: "Groupe I", equipeA: "France",            equipeB: "Sénégal",             date: "2026-06-15T18:00:00" },
+                { groupe: "Groupe I", equipeA: "Irak",              equipeB: "Norvège",             date: "2026-06-15T21:00:00" },
+                { groupe: "Groupe I", equipeA: "France",            equipeB: "Irak",                date: "2026-06-20T15:00:00" },
+                { groupe: "Groupe I", equipeA: "Norvège",           equipeB: "Sénégal",             date: "2026-06-20T18:00:00" },
             ];
 
+            const btn = document.getElementById('btn-injecter-tout');
+            btn.disabled = true; btn.textContent = "⏳ Injection en cours…";
+
             try {
-                let compteur = 0;
                 for (const match of calendrierOfficiel) {
                     await addDoc(collection(db, "matches"), {
                         groupe: match.groupe,
-                        equipeA: match.equipeA,
-                        equipeB: match.equipeB,
-                        scoreA: match.scoreA,
-                        scoreB: match.scoreB,
-                        statut: match.statut,
-                        // Conversion de la date texte en Timestamp Firebase
+                        equipeA: match.equipeA, equipeB: match.equipeB,
+                        scoreA: null, scoreB: null, statut: "futur",
                         dateLimite: Timestamp.fromDate(new Date(match.date))
                     });
-                    compteur++;
                 }
-                alert(`${compteur} matchs officiels ont été injectés avec succès ! 🚀`);
-                location.reload();
-            } catch (error) {
-                alert("Erreur lors de l'injection : " + error.message);
+                showToast(`${calendrierOfficiel.length} matchs injectés avec succès ! 🚀`);
+                setTimeout(() => location.reload(), 1500);
+            } catch (err) {
+                showToast("Erreur : " + err.message, "error");
+                btn.disabled = false; btn.textContent = "🚀 Injecter le Calendrier Officiel";
             }
         });
 
-        // Ajouter un match manuellement
+        // ── Création manuelle ──
         document.getElementById('btn-create-match').addEventListener('click', async () => {
-            const groupe = document.getElementById('add-groupe').value.trim();
-            const eqA = document.getElementById('add-teamA').value.trim();
-            const eqB = document.getElementById('add-teamB').value.trim();
+            const groupe  = document.getElementById('add-groupe').value.trim();
+            const eqA     = document.getElementById('add-teamA').value.trim();
+            const eqB     = document.getElementById('add-teamB').value.trim();
             const dateVal = document.getElementById('add-date').value;
 
-            if(!groupe || !eqA || !eqB || !dateVal) return alert("Remplis tous les champs !");
+            if (!groupe || !eqA || !eqB || !dateVal) {
+                showToast("Remplis tous les champs !", "error"); return;
+            }
 
-            await addDoc(collection(db, "matches"), {
-                groupe: groupe,
-                equipeA: eqA,
-                equipeB: eqB,
-                scoreA: null,
-                scoreB: null,
-                dateLimite: Timestamp.fromDate(new Date(dateVal)),
-                statut: "futur"
-            });
-            alert("Match ajouté manuellement ! ✅");
-            location.reload();
+            const btn = document.getElementById('btn-create-match');
+            btn.disabled = true; btn.textContent = "⏳ Ajout…";
+
+            try {
+                await addDoc(collection(db, "matches"), {
+                    groupe, equipeA: eqA, equipeB: eqB,
+                    scoreA: null, scoreB: null, statut: "futur",
+                    dateLimite: Timestamp.fromDate(new Date(dateVal))
+                });
+                showToast("Match ajouté ! ✅");
+                ['add-groupe','add-teamA','add-teamB','add-date'].forEach(id => document.getElementById(id).value = '');
+                loadAdminMatches();
+            } catch (err) {
+                showToast("Erreur : " + err.message, "error");
+            } finally {
+                btn.disabled = false; btn.textContent = "➕ Ajouter le match";
+            }
         });
 
+        // ── Chargement des matchs admin ──
         async function loadAdminMatches() {
-            const q = query(collection(db, "matches"), orderBy("groupe"), orderBy("dateLimite"));
-            const snap = await getDocs(q);
+            document.getElementById('skeletons').style.display = 'none';
             const container = document.getElementById('admin-matches-list');
             container.innerHTML = "";
 
-            if(snap.empty) {
-                container.innerHTML = "<p>Aucun match en base de données.</p>";
+            const q = query(collection(db, "matches"), orderBy("groupe"), orderBy("dateLimite"));
+            const snap = await getDocs(q);
+
+            if (snap.empty) {
+                container.innerHTML = "<p style='text-align:center; color:rgba(255,255,255,0.4); padding:2rem 0;'>Aucun match en base de données.</p>";
                 return;
             }
 
             snap.forEach(matchDoc => {
                 const match = matchDoc.data();
-                const mId = matchDoc.id;
+                const mId   = matchDoc.id;
+                const termine = match.statut === 'termine';
 
-                const div = document.createElement('div');
-                div.className = "card";
-                div.style.background = "#0f3460";
-                div.innerHTML = `
-                    <small style="color: var(--primary); font-weight: bold; display: block; text-align: center;">${match.groupe || 'Sans Groupe'}</small>
-                    <p style="text-align:center; font-weight:bold; margin-top: 5px;">${match.equipeA} VS ${match.equipeB}</p>
-                    <div style="display:flex; gap:10px; justify-content:center;">
-                        <input type="number" id="finalA-${mId}" placeholder="Score A" value="${match.scoreA !== null ? match.scoreA : ''}" style="width:70px;">
-                        <input type="number" id="finalB-${mId}" placeholder="Score B" value="${match.scoreB !== null ? match.scoreB : ''}" style="width:70px;">
+                const card = document.createElement('div');
+                card.className = `match-admin-card${termine ? ' termine' : ''}`;
+                card.innerHTML = `
+                    <div class="match-admin-header">
+                        <span class="match-groupe-badge">${match.groupe || 'Sans groupe'}</span>
+                        <span class="match-statut-badge ${termine ? 'termine' : 'futur'}">
+                            ${termine ? '✅ Terminé' : '⏳ À venir'}
+                        </span>
                     </div>
-                    <button id="btn-calc-${mId}">${match.statut === 'termine' ? '🔄 Recalculer les points' : '🏆 Valider & Calculer'}</button>
+                    <div class="match-teams">
+                        <span class="match-team">${match.equipeA}</span>
+                        <span class="match-vs">VS</span>
+                        <span class="match-team right">${match.equipeB}</span>
+                    </div>
+                    <div class="score-row">
+                        <label>Score réel :</label>
+                        <input class="score-input-sm" type="number" id="finalA-${mId}" min="0"
+                               placeholder="A" value="${match.scoreA !== null ? match.scoreA : ''}">
+                        <span class="score-sep">–</span>
+                        <input class="score-input-sm" type="number" id="finalB-${mId}" min="0"
+                               placeholder="B" value="${match.scoreB !== null ? match.scoreB : ''}">
+                        <button class="btn ${termine ? 'btn-recalc' : 'btn-validate'}" id="btn-calc-${mId}" style="flex:1; margin-left:8px;">
+                            ${termine ? '🔄 Recalculer' : '🏆 Valider & Calculer'}
+                        </button>
+                    </div>
                 `;
-                container.appendChild(div);
+                container.appendChild(card);
 
                 document.getElementById(`btn-calc-${mId}`).addEventListener('click', () => calculerPointsMatch(mId, match));
             });
         }
 
+        // ── Calcul des points ──
         async function calculerPointsMatch(matchId, matchData) {
             const resA = parseInt(document.getElementById(`finalA-${matchId}`).value);
             const resB = parseInt(document.getElementById(`finalB-${matchId}`).value);
 
-            if(isNaN(resA) || isNaN(resB)) return alert("Saisis un score valide !");
+            if (isNaN(resA) || isNaN(resB)) { showToast("Saisis un score valide !", "error"); return; }
 
-            await updateDoc(doc(db, "matches", matchId), {
-                scoreA: resA,
-                scoreB: resB,
-                statut: "termine"
-            });
+            const btn = document.getElementById(`btn-calc-${matchId}`);
+            btn.disabled = true; btn.textContent = "⏳ Calcul…";
 
-            const issueReelle = resA > resB ? "1" : resA < resB ? "2" : "N";
-            const q = query(collection(db, "predictions"), where("matchId", "==", matchId));
-            const pronoSnapshot = await getDocs(q);
+            try {
+                await updateDoc(doc(db, "matches", matchId), { scoreA: resA, scoreB: resB, statut: "termine" });
 
-            for (const pronoDoc of pronoSnapshot.docs) {
-                const prono = pronoDoc.data();
-                let pointsProno = 0;
+                const issueReelle = resA > resB ? "1" : resA < resB ? "2" : "N";
+                const q = query(collection(db, "predictions"), where("matchId", "==", matchId));
+                const pronoSnapshot = await getDocs(q);
 
-                const pronoIssue = prono.pronoA > prono.pronoB ? "1" : prono.pronoA < prono.pronoB ? "2" : "N";
-
-                if (pronoIssue === issueReelle) {
-                    pointsProno += 2;
-                    if (prono.pronoA === resA && prono.pronoB === resB) {
-                        pointsProno += 3;
+                for (const pronoDoc of pronoSnapshot.docs) {
+                    const prono = pronoDoc.data();
+                    const pronoIssue = prono.pronoA > prono.pronoB ? "1" : prono.pronoA < prono.pronoB ? "2" : "N";
+                    let pts = 0;
+                    if (pronoIssue === issueReelle) {
+                        pts += 2;
+                        if (prono.pronoA === resA && prono.pronoB === resB) pts += 3;
+                    }
+                    const diff = pts - (prono.pointsGagnes || 0);
+                    await updateDoc(doc(db, "predictions", pronoDoc.id), { pointsGagnes: pts });
+                    const userSnap = await getDoc(doc(db, "users", prono.userId));
+                    if (userSnap.exists()) {
+                        await updateDoc(doc(db, "users", prono.userId), {
+                            pointsTotaux: (userSnap.data().pointsTotaux || 0) + diff
+                        });
                     }
                 }
 
-                const ancienPoints = prono.pointsGagnes || 0;
-                const diffPoints = pointsProno - ancienPoints;
-
-                await updateDoc(doc(db, "predictions", pronoDoc.id), { pointsGagnes: pointsProno });
-
-                const userRef = doc(db, "users", prono.userId);
-                const userSnap = await getDoc(userRef);
-                if (userSnap.exists()) {
-                    const nouveauxPointsTotaux = (userSnap.data().pointsTotaux || 0) + diffPoints;
-                    await updateDoc(userRef, { pointsTotaux: nouveauxPointsTotaux });
-                }
+                showToast("Classement mis à jour ! 🚀");
+                loadAdminMatches();
+            } catch (err) {
+                showToast("Erreur : " + err.message, "error");
+                btn.disabled = false;
             }
-
-            alert("Classement mis à jour avec succès ! 🚀");
-            loadAdminMatches();
         }
 
         document.getElementById('btn-logout').addEventListener('click', () => {
