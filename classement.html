@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classement Général</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <a href="pronostics.html">⚽ Mes Pronos</a>
+        <a href="classement.html">🏆 Classement</a>
+        <a href="#" id="btn-logout">🚪 Déconnexion</a>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <h2>🏆 Classement Général de l'Équipe</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Pos</th>
+                        <th>Joueur</th>
+                        <th>Points</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                    <tr><td colspan="3" style="text-align:center;">Chargement...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './js/firebase-config.js';
+        import { collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const tbody = document.getElementById('leaderboard-body');
+
+        async function loadLeaderboard() {
+            const q = query(collection(db, "users"), orderBy("pointsTotaux", "desc"));
+            const querySnapshot = await getDocs(q);
+            tbody.innerHTML = "";
+
+            let rang = 1;
+            querySnapshot.forEach((doc) => {
+                const user = doc.data();
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>#${rang}</strong></td>
+                    <td>${user.nom}</td>
+                    <td style="color: var(--primary); font-weight:bold;">${user.pointsTotaux} pts</td>
+                `;
+                tbody.appendChild(tr);
+                rang++;
+            });
+        }
+
+        loadLeaderboard();
+    </script>
+</body>
+</html>
