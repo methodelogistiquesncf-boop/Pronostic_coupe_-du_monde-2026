@@ -10,6 +10,7 @@
     <nav>
         <a href="pronostics.html">⚽ Mes Pronos</a>
         <a href="classement.html">🏆 Classement</a>
+        <a href="admin.html" id="nav-admin" style="display: none; color: #ff4757;">🛠️ Admin</a>
         <a href="#" id="btn-logout">🚪 Déconnexion</a>
     </nav>
 
@@ -25,6 +26,7 @@
 
         const matchesList = document.getElementById('matches-list');
         const btnSaveAll = document.getElementById('btn-save-all');
+        const navAdmin = document.getElementById('nav-admin');
 
         auth.onAuthStateChanged(async (user) => {
             if (!user) {
@@ -32,7 +34,11 @@
                 return;
             }
 
-            // Charger les matchs et les pronos existants
+            // Affichage secret du bouton admin pour toi
+            if (user.uid === "tYvyTn0PmhMbDpkjSwwEh2EjvYT2") {
+                navAdmin.style.display = "block";
+            }
+
             const matchesSnapshot = await getDocs(collection(db, "matches"));
             matchesList.innerHTML = "";
             
@@ -48,7 +54,6 @@
                 const matchId = matchDoc.id;
                 const isBloque = new Date() > match.dateLimite.toDate();
 
-                // Chercher si le joueur a déjà mis un prono
                 const pronoRef = doc(db, "predictions", `${user.uid}_${matchId}`);
                 const pronoSnap = await getDoc(pronoRef);
                 let pronoA = "";
@@ -72,18 +77,17 @@
                         <span class="team right">${match.equipeB}</span>
                     </div>
                     <small style="color: var(--text-muted); display:block; text-align:center; margin-top:5px;">
-                        ${isBloque ? "❌ Pronostic verrouillé (Match démarré)" : `⏳ Limite : ${match.dateLimite.toDate().toLocaleString('fr-FR')}`}
+                        ${isBloque ? "❌ Verrouillé (Match démarré)" : `⏳ Limite : ${match.dateLimite.toDate().toLocaleString('fr-FR')}`}
                     </small>
                 `;
                 matchesList.appendChild(matchCard);
             }
 
-            // Gestion de la sauvegarde globale
             btnSaveAll.onclick = async () => {
                 for (const matchDoc of matchesSnapshot.docs) {
                     const matchId = matchDoc.id;
                     const match = matchDoc.data();
-                    if (new Date() > match.dateLimite.toDate()) continue; // Skip si verrouillé
+                    if (new Date() > match.dateLimite.toDate()) continue;
 
                     const valA = document.getElementById(`pronoA-${matchId}`).value;
                     const valB = document.getElementById(`pronoB-${matchId}`).value;
@@ -99,7 +103,7 @@
                         }, { merge: true });
                     }
                 }
-                alert("Tous vos pronostics ont été enregistrés ! ✅");
+                alert("Pronostics enregistrés ! ✅");
             };
         });
 
