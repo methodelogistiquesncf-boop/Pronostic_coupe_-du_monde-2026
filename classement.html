@@ -3,72 +3,412 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Classement Général</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Classement · Prono Cup</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #0e1a14;
+            color: #f0f0f0;
+            min-height: 100vh;
+        }
+
+        /* ── Nav ── */
+        nav {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 10px 16px;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        nav a {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: rgba(255,255,255,0.65);
+            text-decoration: none;
+            transition: background 0.15s, color 0.15s;
+        }
+        nav a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        nav a.active { background: rgba(255,215,0,0.15); color: #FFD700; }
+        nav .spacer { flex: 1; }
+        nav #btn-logout { margin-left: auto; color: rgba(255,255,255,0.4); font-size: 12px; }
+        nav #nav-admin  { color: #ff7043; }
+
+        /* ── Fond pelouse ── */
+        .bg-layer {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 30%, rgba(26,107,60,0.4) 0%, transparent 55%),
+                radial-gradient(ellipse at 80% 70%, rgba(26,58,107,0.4) 0%, transparent 55%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.018) 40px, rgba(255,255,255,0.018) 41px),
+                repeating-linear-gradient(0deg,  transparent, transparent 40px, rgba(255,255,255,0.018) 40px, rgba(255,255,255,0.018) 41px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── Hero ── */
+        .hero {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 2.5rem 1rem 2rem;
+        }
+        .hero-icon { font-size: 52px; display: block; margin-bottom: 0.5rem; }
+        .hero-eyebrow {
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: rgba(255,215,0,0.6);
+            margin-bottom: 6px;
+        }
+        .hero-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #FFD700;
+            letter-spacing: 2px;
+            text-shadow: 0 0 40px rgba(255,215,0,0.3);
+        }
+        .hero-sub {
+            font-size: 13px;
+            color: rgba(255,255,255,0.4);
+            margin-top: 6px;
+        }
+
+        /* ── Container ── */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 0 16px 80px;
+        }
+
+        /* ── Podium top 3 ── */
+        .podium {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 1.75rem;
+            align-items: end;
+        }
+        .podium-item {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 1rem 0.75rem;
+            text-align: center;
+            transition: border-color 0.2s;
+        }
+        .podium-item:hover { border-color: rgba(255,215,0,0.2); }
+        .podium-item.first {
+            background: rgba(255,215,0,0.08);
+            border-color: rgba(255,215,0,0.3);
+            padding-top: 1.5rem;
+        }
+        .podium-item.second { padding-top: 1.25rem; }
+        .podium-item.third  { padding-top: 1rem; }
+
+        .podium-medal { font-size: 28px; display: block; margin-bottom: 6px; }
+        .podium-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #f0f0f0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .podium-pts {
+            font-size: 20px;
+            font-weight: 700;
+            color: #FFD700;
+            margin-top: 4px;
+            line-height: 1;
+        }
+        .podium-pts-label {
+            font-size: 10px;
+            color: rgba(255,255,255,0.3);
+            margin-top: 2px;
+        }
+
+        /* ── Section titre ── */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 1.5rem 0 0.75rem;
+        }
+        .section-badge {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: #1a2a0a;
+            background: #FFD700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+        .section-line {
+            flex: 1;
+            height: 1px;
+            background: rgba(255,255,255,0.08);
+        }
+
+        /* ── Ligne classement ── */
+        .rank-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .rank-row:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,215,0,0.15); }
+        .rank-row.me {
+            background: rgba(255,215,0,0.07);
+            border-color: rgba(255,215,0,0.25);
+        }
+
+        .rank-pos {
+            font-size: 13px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.3);
+            min-width: 28px;
+            text-align: center;
+        }
+        .rank-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.6);
+            flex-shrink: 0;
+            text-transform: uppercase;
+        }
+        .rank-name {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 600;
+            color: #f0f0f0;
+        }
+        .rank-name .you-badge {
+            font-size: 10px;
+            font-weight: 700;
+            background: rgba(255,215,0,0.2);
+            color: #FFD700;
+            border: 1px solid rgba(255,215,0,0.3);
+            padding: 2px 7px;
+            border-radius: 20px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        .rank-pts {
+            font-size: 16px;
+            font-weight: 700;
+            color: #FFD700;
+        }
+        .rank-pts-label {
+            font-size: 10px;
+            color: rgba(255,255,255,0.3);
+            text-align: right;
+        }
+
+        /* Squelette chargement */
+        .skeleton {
+            background: rgba(255,255,255,0.06);
+            border-radius: 12px;
+            height: 62px;
+            margin-bottom: 8px;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0%   { opacity: 0.6; }
+            50%  { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        @media (max-width: 420px) {
+            .hero-title { font-size: 22px; }
+            .podium-pts { font-size: 17px; }
+            .podium-name { font-size: 12px; }
+        }
+    </style>
 </head>
 <body>
+
+    <div class="bg-layer"></div>
+    <div class="bg-grid"></div>
+
     <nav>
         <a href="pronostics.html">⚽ Mes Pronos</a>
-        <a href="classement.html">🏆 Classement</a>
-        <a href="admin.html" id="nav-admin" style="display: none; color: #ff4757;">🛠️ Admin</a>
+        <a href="classement.html" class="active">🏆 Classement</a>
+        <a href="admin.html" id="nav-admin" style="display:none;">🛠️ Admin</a>
+        <span class="spacer"></span>
         <a href="#" id="btn-logout">🚪 Déconnexion</a>
     </nav>
 
+    <div class="hero">
+        <span class="hero-icon">🏆</span>
+        <div class="hero-eyebrow">Coupe du Monde · Prono Cup</div>
+        <div class="hero-title">CLASSEMENT GÉNÉRAL</div>
+        <div class="hero-sub" id="hero-sub">Chargement…</div>
+    </div>
+
     <div class="container">
-        <div class="card">
-            <h2>🏆 Classement Général de l'Équipe</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Pos</th>
-                        <th>Joueur</th>
-                        <th>Points</th>
-                    </tr>
-                </thead>
-                <tbody id="leaderboard-body">
-                    <tr><td colspan="3" style="text-align:center;">Chargement...</td></tr>
-                </tbody>
-            </table>
+
+        <!-- Podium top 3 -->
+        <div class="podium" id="podium" style="display:none;">
+            <div class="podium-item second" id="pod-2">
+                <span class="podium-medal">🥈</span>
+                <div class="podium-name" id="pod-2-name">–</div>
+                <div class="podium-pts"  id="pod-2-pts">–</div>
+                <div class="podium-pts-label">pts</div>
+            </div>
+            <div class="podium-item first" id="pod-1">
+                <span class="podium-medal">🥇</span>
+                <div class="podium-name" id="pod-1-name">–</div>
+                <div class="podium-pts"  id="pod-1-pts">–</div>
+                <div class="podium-pts-label">pts</div>
+            </div>
+            <div class="podium-item third" id="pod-3">
+                <span class="podium-medal">🥉</span>
+                <div class="podium-name" id="pod-3-name">–</div>
+                <div class="podium-pts"  id="pod-3-pts">–</div>
+                <div class="podium-pts-label">pts</div>
+            </div>
         </div>
+
+        <!-- Liste complète -->
+        <div class="section-header" id="section-header" style="display:none;">
+            <span class="section-badge">CLASSEMENT COMPLET</span>
+            <div class="section-line"></div>
+        </div>
+
+        <!-- Squelettes de chargement -->
+        <div id="skeletons">
+            <div class="skeleton"></div>
+            <div class="skeleton"></div>
+            <div class="skeleton"></div>
+            <div class="skeleton"></div>
+            <div class="skeleton"></div>
+        </div>
+
+        <div id="leaderboard-list"></div>
+
     </div>
 
     <script type="module">
         import { auth, db } from './js/firebase-config.js';
         import { collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        const tbody = document.getElementById('leaderboard-body');
-        const navAdmin = document.getElementById('nav-admin');
+        const navAdmin      = document.getElementById('nav-admin');
+        const heroSub       = document.getElementById('hero-sub');
+        const podium        = document.getElementById('podium');
+        const sectionHeader = document.getElementById('section-header');
+        const skeletons     = document.getElementById('skeletons');
+        const list          = document.getElementById('leaderboard-list');
+
+        let currentUid = null;
 
         auth.onAuthStateChanged((user) => {
-            if (user && user.uid === "tYvyTn0PmhMbDpkjSwwEh2EjvYT2") {
-                navAdmin.style.display = "block";
+            if (!user) { window.location.href = "index.html"; return; }
+            currentUid = user.uid;
+            if (user.uid === "tYvyTn0PmhMbDpkjSwwEh2EjvYT2") {
+                navAdmin.style.display = "flex";
             }
+            loadLeaderboard();
         });
+
+        function initials(name) {
+            return name.trim().split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+        }
 
         async function loadLeaderboard() {
             const q = query(collection(db, "users"), orderBy("pointsTotaux", "desc"));
-            const querySnapshot = await getDocs(q);
-            tbody.innerHTML = "";
+            const snap = await getDocs(q);
 
-            let rang = 1;
-            querySnapshot.forEach((doc) => {
-                const user = doc.data();
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>#${rang}</strong></td>
-                    <td>${user.nom}</td>
-                    <td style="color: var(--primary); font-weight:bold;">${user.pointsTotaux} pts</td>
+            skeletons.style.display = 'none';
+
+            const users = [];
+            snap.forEach(doc => users.push({ id: doc.id, ...doc.data() }));
+
+            if (users.length === 0) {
+                list.innerHTML = "<p style='text-align:center; color:rgba(255,255,255,0.4); padding:3rem 0;'>Aucun joueur pour l'instant.</p>";
+                heroSub.textContent = "Sois le premier à scorer !";
+                return;
+            }
+
+            heroSub.textContent = `${users.length} participant${users.length > 1 ? 's' : ''} · Mis à jour en temps réel`;
+
+            // ── Podium ──
+            const medals = ['pod-1', 'pod-2', 'pod-3'];
+            medals.forEach((id, i) => {
+                if (users[i]) {
+                    document.getElementById(`${id}-name`).textContent = users[i].nom;
+                    document.getElementById(`${id}-pts`).textContent  = users[i].pointsTotaux ?? 0;
+                }
+            });
+            if (users.length >= 1) {
+                podium.style.display = 'grid';
+                sectionHeader.style.display = 'flex';
+            }
+
+            // ── Liste complète ──
+            users.forEach((u, i) => {
+                const rang = i + 1;
+                const isMe = u.id === currentUid;
+
+                const row = document.createElement('div');
+                row.className = `rank-row${isMe ? ' me' : ''}`;
+
+                const posLabel = rang === 1 ? '🥇' : rang === 2 ? '🥈' : rang === 3 ? '🥉' : `#${rang}`;
+
+                row.innerHTML = `
+                    <div class="rank-pos">${posLabel}</div>
+                    <div class="rank-avatar">${initials(u.nom)}</div>
+                    <div class="rank-name">
+                        ${u.nom}
+                        ${isMe ? '<span class="you-badge">Moi</span>' : ''}
+                    </div>
+                    <div>
+                        <div class="rank-pts">${u.pointsTotaux ?? 0}</div>
+                        <div class="rank-pts-label">pts</div>
+                    </div>
                 `;
-                tbody.appendChild(tr);
-                rang++;
+                list.appendChild(row);
             });
         }
 
-        loadLeaderboard();
-        
         document.getElementById('btn-logout').addEventListener('click', () => {
             auth.signOut().then(() => window.location.href = "index.html");
         });
     </script>
+
 </body>
 </html>
