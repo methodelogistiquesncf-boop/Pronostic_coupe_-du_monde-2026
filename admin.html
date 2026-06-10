@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Gestion Coupe du monde</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h2>Créer un Match</h2>
+            <input type="text" id="add-teamA" placeholder="Équipe A (ex: France)">
+            <input type="text" id="add-teamB" placeholder="Équipe B (ex: Italie)">
+            <input type="datetime-local" id="add-date" placeholder="Date limite de saisie">
+            <button id="btn-create-match">Ajouter le match</button>
+        </div>
+
+        <div class="card">
+            <h2>Clôturer et Calculer les points</h2>
+            <div id="admin-matches-list"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './js/firebase-config.js';
+        import { collection, addDoc, getDocs, doc, updateDoc, getDoc, Timestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        // Créer un match
+        document.getElementById('btn-create-match').addEventListener('click', async () => {
+            const eqA = document.getElementById('add-teamA').value;
+            const eqB = document.getElementById('add-teamB').value;
+            const dateVal = document.getElementById('add-date').value;
+
+            if(!eqA || !eqB || !dateVal) return alert("Remplis tous les champs !");
+
+            await addDoc(collection(db, "matches"), {
+                equipeA: eqA,
+                equipeB: eqB,
+                scoreA: null,
+                scoreB: null,
+                dateLimite: Timestamp.fromDate(new Date(dateVal)),
+                statut: "futur"
+            });
+            alert("Match ajouté !");
+            location.reload();
+        });
+
+        // Charger les matchs pour l'admin
+        async function loadAdminMatches() {
+            const snap = await getDocs(collection(db, "matches"));
+            const container = document.getElementById('admin-matches-list');
+            container.innerHTML = "";
+
+            snap.forEach(matchDoc => {
+                const match = matchDoc.data();
+                const mId = matchDoc.id;
+
+                const div = document.createElement('div');
+                div.className = "card";
+                div.style.background = "#0f3460";
+                div.innerHTML = `
+                    <p style="text-align:center; font-weight:bold;">${match.equipeA} VS ${match.equipeB}</p>
+                    <div style="display:flex; gap:10px; justify-content:center;">
+                        <input type="number" id="finalA-${mId}" placeholder="Score A" value="${match.scoreA !== null ? match.scoreA : ''}" style="width:70px;">
+                        <input type="number" id="finalB-${mId}" placeholder="Score B" value="${match.scoreB !== null ? match.scoreB : ''}" style="width:70px;">
+                    </div>
+                    <button id="btn-calc-${mId}">${match.statut === 'termine' ? 'Recalculer les points' : 'Valider & Calculer'}</button>
+                `;
+                container.appendChild(div);
+
+                // Bouton de calcul des points pour CE match
+                document.getElementById(`btn-calc-${mId}`).addEventListener('click', () => calculerPointsMatch(mId, match));
+            });
+        }
+
+        async function calculerPointsMatch(matchId, matchData) {
+            const resA = parseInt(document.getElementById(`finalA-${matchId}`).value);
+            const resB = parseInt(document.getElementById(`finalB-${matchId}`).value);
+
+            if(isNaN(resA) || isNaN(resB)) return alert("Saisis un score valide !");
+
+            // 1. Mettre à jour le score du match
+            await updateDoc(doc(db, "matches", matchId), {
+                scoreA: resA,
+                scoreB: resB,
+                statut: "termine"
+            });
+
+            // Déterminer l'issue du match (1 = victoire A, 2 = victoire B, N = nul)
+            const issueReelle = resA > resB ? "1" : resA < resB ? "2" : "N";
+
+            // 2. Récupérer tous les pronostics associés à ce match
+            const q = query(collection(db, "predictions"), where("matchId", "==", matchId));
+            const pronoSnapshot = await getDocs(q);
+
+            for (const pronoDoc of pronoSnapshot.docs) {
+                const prono = pronoDoc.data();
+                let pointsProno = 0;
+
+                const pronoIssue = prono.pronoA > prono.pronoB ? "1" : prono.pronoA < prono.pronoB ? "2" : "N";
+
+                // Barème : Bon vainqueur / match nul trouvé = 2 points
+                if (pronoIssue === issueReelle) {
+                    pointsProno += 2;
+                    // Score exact = +3 points de bonus (total 5 points)
+                    if (prono.pronoA === resA && prono.pronoB === resB) {
+                        pointsProno += 3;
+                    }
+                }
+
+                // Différence par rapport à ce qui avait déjà été attribué (pour pouvoir recalculer sans bug)
+                const ancienPoints = prono.pointsGagnes || 0;
+                const diffPoints = pointsProno - ancienPoints;
+
+                // Mettre à jour le document du prono
+                await updateDoc(doc(db, "predictions", pronoDoc.id), { pointsGagnes: pointsProno });
+
+                // Mettre à jour le cumul de l'utilisateur dans la collection "users"
+                const userRef = doc(db, "users", prono.userId);
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                    const nouveauxPointsTotaux = (userSnap.data().pointsTotaux || 0) + diffPoints;
+                    await updateDoc(userRef, { pointsTotaux: nouveauxPointsTotaux });
+                }
+            }
+
+            alert("Points calculés et classement mis à jour ! 🚀");
+            loadAdminMatches();
+        }
+
+        loadAdminMatches();
+    </script>
+</body>
+</html>
