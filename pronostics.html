@@ -22,7 +22,7 @@
 
     <script type="module">
         import { auth, db } from './js/firebase-config.js';
-        import { collection, getDocs, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { collection, getDocs, doc, setDoc, getDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
         const matchesList = document.getElementById('matches-list');
         const btnSaveAll = document.getElementById('btn-save-all');
@@ -34,12 +34,13 @@
                 return;
             }
 
-            // Affichage secret du bouton admin pour toi
             if (user.uid === "tYvyTn0PmhMbDpkjSwwEh2EjvYT2") {
                 navAdmin.style.display = "block";
             }
 
-            const matchesSnapshot = await getDocs(collection(db, "matches"));
+            // On récupère les matchs triés par groupe, puis par date
+            const q = query(collection(db, "matches"), orderBy("groupe"), orderBy("dateLimite"));
+            const matchesSnapshot = await getDocs(q);
             matchesList.innerHTML = "";
             
             if(matchesSnapshot.empty) {
@@ -49,10 +50,24 @@
 
             btnSaveAll.style.display = "block";
 
+            let dernierGroupeAffiche = "";
+
             for (const matchDoc of matchesSnapshot.docs) {
                 const match = matchDoc.data();
                 const matchId = matchDoc.id;
                 const isBloque = new Date() > match.dateLimite.toDate();
+
+                // Si c'est un nouveau groupe, on ajoute un titre de séparation dans la liste
+                if (match.groupe !== dernierGroupeAffiche) {
+                    dernierGroupeAffiche = match.groupe;
+                    const groupHeader = document.createElement('h3');
+                    groupHeader.style.color = '#2ec4b6';
+                    groupHeader.style.marginTop = '30px';
+                    groupHeader.style.borderBottom = '2px solid #2ec4b6';
+                    groupHeader.style.paddingBottom = '5px';
+                    groupHeader.innerText = dernierGroupeAffiche;
+                    matchesList.appendChild(groupHeader);
+                }
 
                 const pronoRef = doc(db, "predictions", `${user.uid}_${matchId}`);
                 const pronoSnap = await getDoc(pronoRef);
